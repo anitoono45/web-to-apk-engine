@@ -5,7 +5,7 @@ on:
       site_url:
         description: 'The URL of the website to convert'
         required: true
-        default: 'https://google.com'
+        default: 'https://lexicon45.blogspot.com'
 
 jobs:
   build:
@@ -30,18 +30,20 @@ jobs:
 
       - name: Configure and Build APK
         run: |
-          # 1. Update the host in your twa-manifest.json
+          # 1. Clean the input URL to get just the domain (e.g., lexicon45.blogspot.com)
           DOMAIN=$(echo "${{ github.event.inputs.site_url }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-          sed -i "s/google.com/$DOMAIN/g" twa-manifest.json
           
-          # 2. Setup Bubblewrap Config (Using dynamic environment variables)
+          # 2. Replace "yourwebsite.com" everywhere in your manifest with the real domain
+          sed -i "s/yourwebsite.com/$DOMAIN/g" twa-manifest.json
+          
+          # 3. Create a dummy keystore file so the build doesn't crash
+          touch android.keystore
+          
+          # 4. Force the correct paths for GitHub's Android SDK
           mkdir -p ~/.bubblewrap
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"/usr/local/lib/android/sdk\"}" > ~/.bubblewrap/config.json
           
-          # 3. Accept all licenses
-          yes | bubblewrap doctor || true
-          
-          # 4. Build the APK (Forces 'yes' to all prompts)
+          # 5. Build the APK (Skip signing and prompts)
           bubblewrap build --skipSigning --yes
           
       - name: Upload APK
