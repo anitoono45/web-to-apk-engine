@@ -28,18 +28,20 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Build APK
+      - name: Configure and Build APK
         run: |
-          # 1. Update the host in your manifest
+          # 1. Update the host in your twa-manifest.json
           DOMAIN=$(echo "${{ github.event.inputs.site_url }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
           sed -i "s/google.com/$DOMAIN/g" twa-manifest.json
           
-          # 2. MANUALLY SET THE SDK PATH
-          # On GitHub Runners, the SDK is always at /usr/local/lib/android/sdk
+          # 2. Setup Bubblewrap Config (Using dynamic environment variables)
           mkdir -p ~/.bubblewrap
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"/usr/local/lib/android/sdk\"}" > ~/.bubblewrap/config.json
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
           
-          # 3. Build the APK using the forced configuration
+          # 3. Accept all licenses
+          yes | bubblewrap doctor || true
+          
+          # 4. Build the APK (Forces 'yes' to all prompts)
           bubblewrap build --skipSigning --yes
           
       - name: Upload APK
