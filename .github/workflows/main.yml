@@ -22,21 +22,20 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Force Initialize and Build
+      - name: Build APK
         run: |
-          # Create a basic template so it doesn't crash
-          bubblewrap init --manifest="${{ github.event.inputs.site_url }}/manifest.json" --no-prompt || true
+          # 1. Update the host in your existing twa-manifest.json
+          DOMAIN=$(echo "${{ github.event.inputs.site_url }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+          sed -i "s/google.com/$DOMAIN/g" twa-manifest.json
           
-          # Create a dummy twa-manifest.json if init failed to make one
-          if [ ! -f twa-manifest.json ]; then
-            echo '{"packageId":"com.anitoono.webapp","host":"'${{ github.event.inputs.site_url }}'","name":"Web App","launcherName":"Web App","display":"standalone","themeColor":"#000000","navigationColor":"#000000","backgroundColor":"#000000","startUrl":"/","iconUrl":"https://via.placeholder.com/512","maskableIconUrl":"https://via.placeholder.com/512","appVersionCode":1,"appVersionName":"1.0.0","shortcuts":[],"appKey":{"file":"android.keystore","alias":"android"}}' > twa-manifest.json
-          fi
-
-          # Build the APK without requiring a digital signature (for testing)
-          bubblewrap build --skipSigning
+          # 2. Accept Android SDK Licenses automatically
+          yes | bubblewrap doctor || true
+          
+          # 3. Build the APK (skipping the prompt for signing keys)
+          bubblewrap build --skipSigning --yes
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Converted-Web-APK
+          name: Generated-APK
           path: ./*.apk
