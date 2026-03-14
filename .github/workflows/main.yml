@@ -14,6 +14,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -24,14 +30,16 @@ jobs:
 
       - name: Build APK
         run: |
-          # 1. Update the host in your existing twa-manifest.json
+          # 1. Update the host
           DOMAIN=$(echo "${{ github.event.inputs.site_url }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
           sed -i "s/google.com/$DOMAIN/g" twa-manifest.json
           
-          # 2. Accept Android SDK Licenses automatically
-          yes | bubblewrap doctor || true
+          # 2. This is the MAGIC part: Tell Bubblewrap exactly where the tools are
+          # This prevents the "Do you want to install JDK?" question
+          mkdir -p ~/.bubblewrap
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_SDK_ROOT\"}" > ~/.bubblewrap/config.json
           
-          # 3. Build the APK (skipping the prompt for signing keys)
+          # 3. Run build with the --yes flag to skip all prompts
           bubblewrap build --skipSigning --yes
           
       - name: Upload APK
