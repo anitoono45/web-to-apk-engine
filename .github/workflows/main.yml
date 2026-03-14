@@ -28,24 +28,24 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Fix Bubblewrap SDK Bug
-        run: sudo mkdir -p /usr/local/lib/android/sdk/tools
-
-      - name: Configure and Build APK
+      - name: Fix Environment
         run: |
-          # 1. Clean the URL and inject it into the manifest
+          sudo mkdir -p /usr/local/lib/android/sdk/tools
+          mkdir -p ~/.bubblewrap
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"/usr/local/lib/android/sdk\"}" > ~/.bubblewrap/config.json
+
+      - name: Build APK
+        run: |
+          # 1. Clean the URL
           DOMAIN=$(echo "${{ github.event.inputs.site_url }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
           sed -i "s/yourwebsite.com/$DOMAIN/g" twa-manifest.json
           
-          # 2. Hardcode the exact paths
-          mkdir -p ~/.bubblewrap
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"/usr/local/lib/android/sdk\"}" > ~/.bubblewrap/config.json
+          # 2. Update the project first (This creates the missing checksum)
+          # We use --yes to skip prompts here too
+          bubblewrap update --yes
           
-          # 3. Create a dummy keystore
-          touch android.keystore
-          
-          # 4. Build the APK and automatically answer "yes" to the regeneration prompt
-          echo "yes" | bubblewrap build --skipSigning
+          # 3. Build without prompts
+          bubblewrap build --skipSigning --yes
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
