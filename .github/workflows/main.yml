@@ -1,0 +1,35 @@
+name: Web to APK Build
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'The URL of the website to convert'
+        required: true
+        default: 'https://google.com'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize and Build
+        run: |
+          # This creates a dummy Android project from the URL
+          bubblewrap init --manifest="${{ github.event.inputs.site_url }}/manifest.json" --no-prompt || true
+          bubblewrap build --skipSigning
+          
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Converted-Web-APK
+          path: ./*.apk
