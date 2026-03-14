@@ -1,0 +1,20 @@
+{
+  "packageId": "com.yourname.webtoapk",
+  "host": "yourwebsite.com",
+  "name": "Web App",
+  "launcherName": "Web App",
+  "display": "standalone",
+  "themeColor": "#000000",
+  "navigationColor": "#000000",
+  "backgroundColor": "#000000",
+  "startUrl": "/",
+  "iconUrl": "https://yourwebsite.com/icon.png",
+  "maskableIconUrl": "https://yourwebsite.com/icon.png",
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "shortcuts": [],
+  "appKey": {
+    "file": "android.keystore",
+    "alias": "android"
+  }
+}
