@@ -22,10 +22,17 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize and Build
+      - name: Force Initialize and Build
         run: |
-          # This creates a dummy Android project from the URL
+          # Create a basic template so it doesn't crash
           bubblewrap init --manifest="${{ github.event.inputs.site_url }}/manifest.json" --no-prompt || true
+          
+          # Create a dummy twa-manifest.json if init failed to make one
+          if [ ! -f twa-manifest.json ]; then
+            echo '{"packageId":"com.anitoono.webapp","host":"'${{ github.event.inputs.site_url }}'","name":"Web App","launcherName":"Web App","display":"standalone","themeColor":"#000000","navigationColor":"#000000","backgroundColor":"#000000","startUrl":"/","iconUrl":"https://via.placeholder.com/512","maskableIconUrl":"https://via.placeholder.com/512","appVersionCode":1,"appVersionName":"1.0.0","shortcuts":[],"appKey":{"file":"android.keystore","alias":"android"}}' > twa-manifest.json
+          fi
+
+          # Build the APK without requiring a digital signature (for testing)
           bubblewrap build --skipSigning
           
       - name: Upload APK
